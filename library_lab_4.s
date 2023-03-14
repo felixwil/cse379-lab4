@@ -10,7 +10,213 @@
 	.global illuminate_LEDs
 	.global illuminate_RGB_LED
 	.global read_tiva_push_button
-	.global read_keypad
+	.global read_from_keypad
+
+gpio_btn_and_LED_init:
+	PUSH {lr}
+    ; Enable clock for port F and D
+    MOV r1, #0xE608
+	MOVT r1, #0x400F
+	mov r0, #0x2B
+	STRB r0, [r1]
+
+    ; Setting the direction for port F, 0 button, 1 for RGB LEDs, for tiva board
+    MOV r1, #0x5400
+	MOVT r1, #0x4002
+	mov r0, #0x0E
+	STRB r0, [r1]
+
+	; Setting the direction for port A, 4 keyboard matrix output lines
+    MOV  r1, #0x4400
+	MOVT r1, #0x4000
+	MOV  r0, #0x3C
+	STRB r0, [r1]
+
+	; Setting the direction for port B, 4 LEDs
+    MOV r1, #0x5400
+	MOVT r1, #0x4000
+	mov r0, #0x0F
+	STRB r0, [r1]
+
+    ; Setting the direction for port D, 0 button, for keypad
+    ;MOV r1, #0x7400
+	;MOVT r1, #0x4000
+;	mov r0, #0x00
+;	STRB r0, [r1]
+
+	; Set the pin to be digital port A
+	MOV r1, #0x451C
+	MOVT r1, #0x4000
+	mov r0, #0x3C
+	STRB r0, [r1]
+
+	; Set the pin to be digital for the tiva button and LED's
+	MOV r1, #0x551C
+	MOVT r1, #0x4002
+	mov r0, #0x1F
+	STRB r0, [r1]
+
+	; Set the pin to be digital for the base board LED's
+	MOV r1, #0x551C
+	MOVT r1, #0x4000
+	mov r0, #0x0F
+	STRB r0, [r1]
+
+	; Set the pin to be digital for the button on base board
+	;MOV r1, #0x751C
+	;MOVT r1, #0x4000
+	;mov r0, #0x0F
+	;STRB r0, [r1]
+
+	; Set the PUR for pin 4 for the push button
+	MOV r1, #0x5510
+	MOVT r1, #0x4002
+	mov r0, #0x10
+	STRB r0, [r1]
+
+	; Set the PUR for pin 4 for the push button
+	;MOV r1, #0x751C
+	;MOVT r1, #0x4000
+	;mov r0, #0x0F
+	;STRB r0, [r1]
+
+	POP {lr}
+	MOV pc, lr
+
+read_from_keypad:
+	PUSH {lr}
+	BL keypad_init
+
+	MOV r2, #4
+keypadloop:
+	MOV r1, #0x4000
+	MOVT r1, #0x4000
+	STRB r2, [r1, #0x3FC]
+
+	MOV r1, #0x7000
+	MOVT r1, #0x4000
+	LDRB r3, [r1, #0x3FC]
+	CMP r3, #0
+	BGT exitkeypadloop
+
+	LSL r2, r2, #1
+	CMP r2, #32
+	BLE keypadloop
+	MOV r2, #4
+	B keypadloop
+exitkeypadloop:
+
+	LSR r2, r2, #2
+
+;   r2 1 2 3 4
+; r3
+; 1    1 2 3
+; 2    4 5 6
+; 3    7 8 9
+; 4      0
+
+	MOV r0, #0
+	CMP r3, #8
+	BEQ exitkeypadread
+
+	CMP r3, #4
+	BNE r3not4
+	MOV r3, #3
+r3not4:
+	CMP r3, #8
+	BNE r3not8
+	MOV r3, #4
+r3not8:
+	CMP r2, #4
+	BNE r2not4
+	MOV r2, #3
+r2not4:
+	CMP r2, #8
+	BNE r2not8
+	MOV r2, #4
+r2not8:
+
+	SUB r3, r3, #1
+	MOV r1, #3
+	MUL r3, r3, r1
+	ADD r0, r3, r2
+
+exitkeypadread:
+
+	BL gpio_btn_and_LED_init
+
+	POP {lr}
+	MOV pc, lr
+
+read_from_push_btns:
+	PUSH {lr,r4}
+
+	MOV r4, #0
+	MOV r3, #0
+
+	MOV r1, #0x7000
+	MOVT r1, #0x4000
+	LDRB r0, [r1, #0x3FC]
+
+	AND r3, r0, #1
+	LSL r3, r3, #3
+	ORR r4, r4, r3
+
+	AND r3, r0, #2
+	LSL r3, r3, #1
+	ORR r4, r4, r3
+
+	AND r3, r0, #4
+	LSR r3, r3, #3
+	ORR r4, r4, r3
+
+	AND r3, r0, #8
+	LSR r3, r3, #1
+	ORR r4, r4, r3
+
+	POP {lr, r4}
+	MOV pc, lr
+
+read_tiva_push_button:
+	PUSH {lr}
+
+	MOV r1, #0x5000
+	MOVT r1, #0x4002
+	LDRB r0, [r1, #0x3FC]
+	MVN r0, r0
+	AND r0, r0, #0x10
+	LSR r0, r0, #4
+
+	POP {lr}
+	MOV pc, lr
+
+illuminate_LEDs:
+	PUSH {lr}
+
+	AND  r0, r0, #0xF
+
+	MOV r1, #0x5000
+	MOVT r1, #0x4000
+	STRB r0, [r1, #0x3FC]
+
+	POP {lr}
+	MOV pc, lr
+
+illuminate_RGB_LED:
+	PUSH {lr}
+
+	AND  r0, r0, #0x7
+
+	LSL r0, r0, #0x1
+	MOV r1, #0x5000
+	MOVT r1, #0x4002
+	LDRB r2, [r1]
+	BFC r2, #0x1, #0x3
+	ORR r0, r0, r2
+	STRB r0, [r1, #0x3FC]
+
+	POP {lr}
+	MOV pc, lr
 
 read_string:
 	PUSH {lr}   ; Store register lr on stack
@@ -118,12 +324,12 @@ uart_init:
 	PUSH {lr}  ; Store register lr on stack
 
 	MOV r0, #0xe618
-	MOVT r0, #0x400F
+	MOVT r0, #0x400f
 	MOV r1, #1
 	STRW r1, [r0]
 
 	MOV r0, #0xe608
-	MOVT r0, #0x400F
+	MOVT r0, #0x400f
 	MOV r1, #1
 	STRW r1, [r0]
 
@@ -253,137 +459,5 @@ exitstring1intloop:
 
 	POP {lr}
 	mov pc, lr
-
-gpio_btn_and_LED_init:
-	PUSH {lr}
-    ; Enable clock for port F and D
-    MOV r1, #0xE608
-	MOVT r1, #0x400F
-	mov r0, #0x2A
-	STRB r0, [r1]
-
-    ; Setting the direction for port F, 0 button, 1 for RGB LEDs, for tiva board
-    MOV r1, #0x5400
-	MOVT r1, #0x4002
-	mov r0, #0x0E
-	STRB r0, [r1]
-
-	; Setting the direction for port B, 3 LEDs
-    MOV r1, #0x5000
-	MOVT r1, #0x4000
-	mov r0, #0x0F
-	STRB r0, [r1, #400]
-
-    ; Setting the direction for port D, 0 button, for keypad
-    MOV r1, #0x7400
-	MOVT r1, #0x4000
-	mov r0, #0x00
-	STRB r0, [r1]
-
-	; Set the pin to be digital for the tiva button and LED's
-	MOV r1, #0x551C
-	MOVT r1, #0x4002
-	mov r0, #0x1F
-	STRB r0, [r1]
-
-	; Set the pin to be digital for the base board LED's
-	MOV r1, #0x551C
-	MOVT r1, #0x4000
-	mov r0, #0x0F
-	STRB r0, [r1]
-
-	; Set the pin to be digital for the button on base board
-	MOV r1, #0x751C
-	MOVT r1, #0x4000
-	mov r0, #0x0F
-	STRB r0, [r1]
-
-	; Set the PUR for pin 4 for the push button
-	MOV r1, #0x5510
-	MOVT r1, #0x4002
-	mov r0, #0x10
-	STRB r0, [r1]
-
-	; Set the PUR for pin 4 for the push button
-	MOV r1, #0x751C
-	MOVT r1, #0x4000
-	mov r0, #0x0F
-	STRB r0, [r1]
-
-	POP {lr}
-	MOV pc, lr
-
-read_from_keypad:
-
-read_from_push_btns:
-	PUSH {lr,r4}
-
-	MOV r4, #0
-	MOV r3, #0
-
-	MOV r1, #0x7000
-	MOVT r1, #0x4000
-	LDRB r0, [r1, #0x3FC]
-
-	AND r3, r0, #1
-	LSL r3, r3, #3
-	ORR r4, r4, r3
-
-	AND r3, r0, #2
-	LSL r3, r3, #1
-	ORR r4, r4, r3
-
-	AND r3, r0, #4
-	LSR r3, r3, #3
-	ORR r4, r4, r3
-
-	AND r3, r0, #8
-	LSR r3, r3, #1
-	ORR r4, r4, r3
-
-	POP {lr, r4}
-	MOV pc, lr
-
-read_tiva_push_button:
-	PUSH {lr}
-
-	MOV r1, #0x5000
-	MOVT r1, #0x4002
-	LDRB r0, [r1, #0x3FC]
-	MVN r0, r0
-	AND r0, r0, #0x10
-	LSR r0, r0, #4
-
-	POP {lr}
-	MOV pc, lr
-
-illuminate_LEDs:
-	PUSH {lr}
-
-	AND  r0, r0, #0x7
-
-	LSL r0, r0, #0x1
-	MOV r1, #0x5000
-	MOVT r1, #0x4000
-	STRB r0, [r1, #0x3FC]
-
-	POP {lr}
-	MOV pc, lr
-
-illuminate_RGB_LED:
-	PUSH {lr}
-
-	AND  r0, r0, #0x7
-
-	LSL r0, r0, #0x1
-	MOV r1, #0x5000
-	MOVT r1, #0x4002
-	LDRB r2, [r1]
-	BFC r2, #0x1, #0x3
-	ORR r0, r0, r2
-	STRB r0, [r1, #0x3FC]
-
-	POP {lr}
-	MOV pc, lr
 
 	.end

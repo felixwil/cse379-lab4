@@ -11,7 +11,7 @@
 	.global illuminate_LEDs
 	.global illuminate_RGB_LED
 	.global read_tiva_push_button
-	.global read_keypad
+	.global read_from_keypad
 	.global keypad_init
 
 	.global lab4
@@ -24,68 +24,52 @@
 	.global num_1_string
 	.global num_2_string
 
-prompt0:	.string "This program calculates the average of two numbers.", 0
-prompt:		.string "input the first number and press enter: ", 0
-prompt2:	.string "input the second number and press enter: ", 0
-prompt3:	.string "The average of the numbers: ", 0
-prompt4:	.string "continue? (q) ", 0
-quitresult:	.string "continue? (q) ", 0
+intro:	.string "This program tests various gpio functionality.", 0
+tivabuttonprompt:		.string "Press switch one on the tiva board.", 0
+buttonsprompt:	.string "Press one of the four buttons on the baseboard to illuminate an led", 0
+ledsprompt: .string "Input a number 0-15 to illuminate the LEDs on the tiva board", 0
+rgbprompt:	.string "Type a number 0 through 5 to choose a color for the RGB LED: Red, Green, Blue, Yellow, Purple, or White", 0
+keypadprompt:	.string "Now press any number key 0-9 on the baseboard's keypad to print out the number to the screen, and illuminate the leds in binary.", 0
+quitprompt:	.string "press q to quit, any other key to continue (q) ", 0
 result:	.string "Your results are reported here: ", 0
-num_1_string: 	.string "Place holder string for your first number", 0
-num_2_string:  	.string "Place holder string for your second number", 0
 
 	.text
 
 	.global lab3
 U0FR: 	.equ 0x18	; UART0 Flag Register
 
-ptr_to_prompt0:		.word prompt0
-ptr_to_prompt:		.word prompt
-ptr_to_prompt2:		.word prompt2
-ptr_to_prompt3:		.word prompt3
-ptr_to_prompt4:		.word prompt4
-ptr_to_quitresult:		.word quitresult
-ptr_to_result:		.word result
-ptr_to_num_1_string:	.word num_1_string
-ptr_to_num_2_string:	.word num_2_string
-
+ptr_to_intro:		.word intro
+ptr_to_tivabuttonprompt:		.word tivabuttonprompt
+ptr_to_buttonsprompt:		.word buttonsprompt
+ptr_to_ledsprompt:		.word ledsprompt
+ptr_to_rgbprompt:		.word rgbprompt
+ptr_to_keypadprompt:		.word keypadprompt
+ptr_to_quitprompt:		.word quitprompt
+ptr_to_result:	.word result
 
 lab4:
 	PUSH {lr}
 
-	;BL keypad_init
+	BL uart_init
 	BL gpio_btn_and_LED_init
-	MOV r0, #0xF
+
+	ldr r4, ptr_to_intro
+	MOV r0, r4
+	BL output_string
+	ldr r4, ptr_to_tivabuttonprompt
+	MOV r0, r4
+	BL output_string
+
+	BL gpio_btn_and_LED_init
+	MOV r0, #0x1
 	BL illuminate_LEDs
-	BL read_from_push_btns
-	BL read_from_push_btns
-	BL read_from_push_btns
-	BL read_from_push_btns
-	BL read_from_push_btns
-	BL read_from_push_btns
-	BL read_from_push_btns
 
-	BL read_tiva_push_button
-	BL read_tiva_push_button
-	BL read_tiva_push_button
-	BL read_tiva_push_button
-	BL read_tiva_push_button
-	BL read_tiva_push_button
-	BL read_tiva_push_button
-
-	MOV r0, #0x01
-	BL illuminate_RGB_LED
-	MOV r0, #0x04
-	BL illuminate_RGB_LED
-	MOV r0, #0x02
-	BL illuminate_RGB_LED
-	MOV r0, #0x05
-	BL illuminate_RGB_LED
-	MOV r0, #0x03
-	BL illuminate_RGB_LED
-	MOV r0, #0x07
-	BL illuminate_RGB_LED
+loopthing:
+	BL read_from_keypad
+	BL illuminate_LEDs
+	B loopthing
 
 	POP {lr}
 	MOV pc, lr
+	.end
 
