@@ -11,6 +11,8 @@
 	.global illuminate_RGB_LED
 	.global read_tiva_push_button
 	.global read_from_keypad
+	.global string2int
+	.global int2string
 
 gpio_btn_and_LED_init:
 	PUSH {lr}
@@ -142,6 +144,7 @@ r2not8:
 	ADD r0, r3, r2
 
 exitkeypadread:
+
 
 	BL gpio_btn_and_LED_init
 
