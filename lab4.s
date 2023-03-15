@@ -33,7 +33,7 @@ num_1_string: 	.string "Place holder string for your first number", 0 ; result s
 
 ;Instantiating a pointer to each of the prompts
 ptr_to_selectprompt:	.word selectprompt
-ptr_to_quitprompt:		.word quitprompt
+ptr_to_quitprompt:	.word quitprompt
 ptr_to_ledsinputprompt:	.word ledsinputprompt
 ptr_to_rgbinputprompt:	.word rgbinputprompt
 ptr_to_tivabtnprompt:	.word tivabtnprompt
@@ -136,12 +136,5 @@ exitselect:
 		POP {lr}
 		MOV pc, lr
 
-loopthing:
-	BL read_from_keypad
-	BL illuminate_LEDs
-	B loopthing
-
-	POP {lr}
-	MOV pc, lr
 	.end
 
