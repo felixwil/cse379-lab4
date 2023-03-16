@@ -107,7 +107,7 @@ selectfour:
                 BL output_string
                 BL read_character
                 BL output_character
-                SUB r0, r0, #0x30
+                SUB r0, r0, #0x30 ; subtract '0' to convert ascii->int
                 PUSH {r0}
                 BL gpio_btn_and_LED_init
                 POP {r0}
@@ -129,11 +129,11 @@ exitselect:
                 ;MOV r0, r4
                 BL output_string
                 BL read_character
-                BL output_character
-                CMP r0, #0x71
-                BNE lab4top
+                BL output_character ; echo the character for feedback
+                CMP r0, #0x71 ; ascii value for lowercase q
+                BNE lab4top ; restart if the user did not select 'q'
 
-                POP {lr}
+                POP {lr} ; restore regs and return
                 MOV pc, lr
 
         .end
