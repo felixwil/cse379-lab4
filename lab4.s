@@ -24,7 +24,7 @@
 ;Creating the prompts for the menu
 selectprompt:			.string "Please select which program you'd like to test; 1:read_tiva_push_button, 2:read_from_push_btns, 3:illuminate_LEDs, 4:illuminate_RGB_LED, and 5:read_from_keypad", 0
 quitprompt:				.string "Press (q) to quit, any other key to continue", 0
-ledsinputprompt:		.string "Input the value to display, number from 0-15, and press enter.", 0
+ledsinputprompt:		.string "Input the value as a decimal number to display in binary on the LEDs, number from 0-15, and press enter.", 0
 rgbinputprompt:			.string "Input the color for RGB, 0:Red, 1:Green, 2:Blue, 3:Yellow, 4:Purple, 5:White", 0
 tivabtnprompt:			.string "Press sw1 on the Tiva board, check r0", 0
 pushbtnprompt:			.string "Press push button(s) on daughter board, check r0", 0
