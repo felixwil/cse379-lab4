@@ -166,6 +166,8 @@ read_from_push_btns:
         AND r3, r0, #8
         LSR r3, r3, #1
         ORR r4, r4, r3
+        
+        MOV r0, r4
 
         POP {lr, r4}
         MOV pc, lr
